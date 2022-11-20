@@ -1,0 +1,69 @@
+version: "3.3"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - library
+      - keycloak
+  library:
+    restart: always
+    image: sameersbn/postgresql:10-2
+    environment:
+      - PG_TRUST_LOCALNET=true
+      - DB_NAME=evacc
+      - DB_USER=admin
+      - DB_PASS=admin123
+      - PG_RUNDIR=/run/postgres
+      - PG_LOGDIR=/var/log/postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - data:/var/lib/postgresql
+      - logs:/var/log/postgresql
+  keycloak:
+    restart: always
+    image: jboss/keycloak:${KEYCLOAK_VERSION}
+    ports:
+      - "9900:8080"
+    command:
+      - "-b 0.0.0.0"
+      - "-Dkeycloak.import=/opt/jboss/keycloak/realm-export.json"
+    environment:
+      - KEYCLOAK_USER=${KEYCLOAK_USER}
+      - KEYCLOAK_PASSWORD=${KEYCLOAK_PASSWORD}
+      - DB_DATABASE=${KEYCLOAK_DATABASE_NAME}
+      - DB_USER=${KEYCLOAK_DATABASE_USER}
+      - DB_PASSWORD=${KEYCLOAK_DATABASE_PASSWORD}
+      - DB_ADDR=${KEYCLOAK_DATABASE_HOST}
+      - DB_VENDOR=${KEYCLOAK_DATABASE_VENDOR}
+    volumes:
+      - ./realm-export.json:/opt/jboss/keycloak/realm-export.json
+    depends_on:
+      - keycloakdb
+  keycloakdb:
+    image: 'bitnami/mariadb:latest'
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=root
+      - MARIADB_DATABASE=${KEYCLOAK_DATABASE_NAME}
+      - MARIADB_USER=${KEYCLOAK_DATABASE_USER}
+      - MARIADB_PASSWORD=${KEYCLOAK_DATABASE_PASSWORD}
+    ports:
+      - "3308:3306"
+    volumes:
+      - keycloak-postgres:/var/lib/mysql
+volumes:
+  keycloak-postgres:
+  data:
+  logs:
