@@ -1,18 +1,26 @@
 version: "3.3"
 
 services:
+  main_server:
+    image: nginx:latest
+    depends_on:
+      - frontend
+      - backend
+      - keycloak
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    volumes:
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+
   frontend:
     build:
       context: ./frontend
-    ports:
-      - "80:80"
     depends_on:
       - backend
   backend:
     build:
       context: ./backend
-    ports:
-      - "8080:8080"
     depends_on:
       - library
       - keycloak
@@ -26,8 +34,6 @@ services:
       - DB_PASS=admin123
       - PG_RUNDIR=/run/postgres
       - PG_LOGDIR=/var/log/postgres
-    ports:
-      - "5432:5432"
     volumes:
       - data:/var/lib/postgresql
       - logs:/var/log/postgresql
@@ -35,7 +41,7 @@ services:
     restart: always
     image: jboss/keycloak:${KEYCLOAK_VERSION}
     ports:
-      - "9900:8080"
+      - "8080:8080"
     command:
       - "-b 0.0.0.0"
       - "-Dkeycloak.import=/opt/jboss/keycloak/realm-export.json"
@@ -59,8 +65,6 @@ services:
       - MARIADB_DATABASE=${KEYCLOAK_DATABASE_NAME}
       - MARIADB_USER=${KEYCLOAK_DATABASE_USER}
       - MARIADB_PASSWORD=${KEYCLOAK_DATABASE_PASSWORD}
-    ports:
-      - "3308:3306"
     volumes:
       - keycloak-postgres:/var/lib/mysql
 volumes:
