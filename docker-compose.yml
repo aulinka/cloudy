@@ -14,13 +14,11 @@ services:
       - ./nginx/conf.d/:/etc/nginx/conf.d/
 
   frontend:
-    build:
-      context: ./frontend
+    image: allpanicnodisco/cloudy:frontend-1.0.0
     depends_on:
       - backend
   backend:
-    build:
-      context: ./backend
+    image: allpanicnodisco/cloudy:backend-1.0.0
     depends_on:
       - library
       - keycloak
