@@ -1,6 +1,11 @@
 version: "3.3"
 
 services:
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
   main_server:
     image: nginx:latest
     depends_on:
@@ -12,13 +17,16 @@ services:
     restart: unless-stopped
     volumes:
       - ./nginx/conf.d/:/etc/nginx/conf.d/
-
   frontend:
-    image: allpanicnodisco/cloudy:frontend-1.0.0
+    # image: allpanicnodisco/cloudy:frontend-1.0.0
+    build:
+      context: ./frontend
     depends_on:
       - backend
   backend:
-    image: allpanicnodisco/cloudy:backend-1.0.0
+    # image: allpanicnodisco/cloudy:backend-1.0.0
+    build: 
+      context: ./backend
     depends_on:
       - library
       - keycloak
@@ -32,6 +40,8 @@ services:
       - DB_PASS=admin123
       - PG_RUNDIR=/run/postgres
       - PG_LOGDIR=/var/log/postgres
+    ports:
+      - "5432:5432"
     volumes:
       - data:/var/lib/postgresql
       - logs:/var/log/postgresql
